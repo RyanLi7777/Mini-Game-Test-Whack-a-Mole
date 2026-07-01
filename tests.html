@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>欢乐打地鼠 · 单元测试</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; background: #1b2436; color: #eee; padding: 24px; }
+    h1 { color: #ffd23f; }
+    .case { padding: 8px 12px; margin: 6px 0; border-radius: 8px; }
+    .pass { background: #1f5c34; }
+    .fail { background: #6e2222; }
+    code { color: #9fe6ff; }
+  </style>
+</head>
+<body>
+  <h1>计分核心单元测试（§10.5 数值用例）</h1>
+  <div id="out"></div>
+  <script type="module">
+    import GameConfig from "./config/game-config.js";
+    import { createScoreState, resolveSwing } from "./src/scoring.js";
+
+    const out = document.getElementById("out");
+    let pass = 0, fail = 0;
+
+    function mole() { return { type: "mole" }; }
+    function rat() { return { type: "rat" }; }
+    function cat() { return { type: "cat" }; }
+
+    function check(name, got, want) {
+      const ok = got === want;
+      ok ? pass++ : fail++;
+      const div = document.createElement("div");
+      div.className = "case " + (ok ? "pass" : "fail");
+      div.innerHTML = `${ok ? "[PASS]" : "[FAIL]"} <b>${name}</b> — 期望 <code>${want}</code>，实际 <code>${got}</code>`;
+      out.appendChild(div);
+    }
+
+    // 用例 A：连敲 7 只地鼠 → 1+2+2+2+2+3+3 = 15
+    (() => {
+      const s = createScoreState();
+      for (let i = 0; i < 7; i++) resolveSwing(s, [mole()], 0);
+      check("用例A 纯连击7地鼠", s.score, 15);
+    })();
+
+    // 用例 B：3地鼠(5) → 空砸(断) → 2地鼠(3) = 8
+    (() => {
+      const s = createScoreState();
+      for (let i = 0; i < 3; i++) resolveSwing(s, [mole()], 0);
+      resolveSwing(s, [], 0); // 空砸
+      for (let i = 0; i < 2; i++) resolveSwing(s, [mole()], 0);
+      check("用例B 空砸断连击", s.score, 8);
+      check("用例B 连击数", s.combo, 2);
+    })();
+
+    // 用例 C：2地鼠(3,连2) → 老鼠(+1,双倍) → 双倍内1地鼠(连3 → 2×2=4) = 8
+    (() => {
+      const s = createScoreState();
+      resolveSwing(s, [mole()], 0);
+      resolveSwing(s, [mole()], 0);
+      resolveSwing(s, [rat()], 1);          // t=1 激活双倍
+      resolveSwing(s, [mole()], 2);          // t=2 双倍内
+      check("用例C 老鼠不断连击+双倍", s.score, 8);
+      check("用例C 连击数=3", s.combo, 3);
+    })();
+
+    // 用例 D：1地鼠(+1) → 猫(1-2→0,断) → 1地鼠(+1) = 1
+    (() => {
+      const s = createScoreState();
+      resolveSwing(s, [mole()], 0);
+      resolveSwing(s, [cat()], 0);
+      resolveSwing(s, [mole()], 0);
+      check("用例D 猫扣分+下限0+断连击", s.score, 1);
+      check("用例D 连击=1", s.combo, 1);
+    })();
+
+    // 用例 E：双倍内老鼠不翻倍
+    (() => {
+      const s = createScoreState();
+      resolveSwing(s, [rat()], 0); // 激活双倍
+      const before = s.score;
+      resolveSwing(s, [rat()], 1); // 双倍内再打老鼠
+      check("用例E 双倍不放大老鼠", s.score - before, 1); // 只 +ratScore=1
+    })();
+
+    // 用例 F：双倍刷新（不叠加）
+    (() => {
+      const s = createScoreState();
+      resolveSwing(s, [rat()], 0);    // t=0 激活，doubleUntil=5
+      resolveSwing(s, [rat()], 4);    // t=4 再打，doubleUntil=9（重置为满5s）
+      check("用例F 双倍刷新", Math.round(s.doubleUntil), 9);
+    })();
+
+    // 用例 G：一锤同时 1地鼠+1猫 → 先地鼠(+1,连1) 再猫(1-2→0,连0) → 0
+    (() => {
+      const s = createScoreState();
+      resolveSwing(s, [mole(), cat()], 0);
+      check("用例G 一锤多中结算顺序-分数", s.score, 0);
+      check("用例G 一锤多中结算顺序-连击", s.combo, 0);
+    })();
+
+    const sum = document.createElement("h2");
+    sum.textContent = `结果：通过 ${pass} / 失败 ${fail}`;
+    sum.style.color = fail === 0 ? "#7fff9f" : "#ff8888";
+    out.prepend(sum);
+  </script>
+</body>
+</html>

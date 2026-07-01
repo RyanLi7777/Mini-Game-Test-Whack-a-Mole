@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>欢乐打地鼠（双击直接打开版）</title>
+  <style>
+    /* 完全离线：仅使用系统字体栈，无任何外部字体/CDN */
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      background: #000; overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none; user-select: none;
+      touch-action: none;
+      font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Noto Sans CJK SC", sans-serif;
+    }
+    #game { display: block; width: 100vw; height: 100vh; }
+    /* 关卡内隐藏系统光标（改用程序绘制的锤子/手指） */
+    body.hide-cursor { cursor: none; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <!-- 非模块化打包版：可双击本文件直接用浏览器打开（file://），
+       不受 ES Module 在 file:// 下的跨域限制。
+       由 tools/build.mjs 从 src/**、config/** 打包生成，
+       修改源码后需重新运行 `node tools/build.mjs` 才能反映到这里。 -->
+  <script src="dist/bundle.js"></script>
+</body>
+</html>
